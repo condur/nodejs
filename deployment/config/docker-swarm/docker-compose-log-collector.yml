@@ -1,0 +1,26 @@
+version: "3.7"
+services:
+
+  collector:
+    image: nodejs/log-collector:${LOG_COLL_DOCKER_IMAGE_TAG}
+    environment:
+      LOG_COLL_PATH: ${LOG_COLL_PATH}
+    volumes:
+      - ${LOG_COLL_PATH}:/fluentd/log
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    networks:
+      - log_collector
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      placement:
+        constraints: [node.role == manager]
+
+networks:
+  log_collector:
+    external: false
+    name: log_collector

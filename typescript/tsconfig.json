@@ -1,0 +1,27 @@
+{
+   "files": [
+      "server/app.ts"
+   ],
+   "include": [
+      "server/**/*.ts",
+      "server/**/**/*.ts"
+   ],
+   "compilerOptions": {
+      "module": "commonjs",
+      "moduleResolution": "node",
+      "noImplicitAny": false,
+      "target": "es6",
+      "outDir": "bin",
+      "rootDir": "server",
+      "sourceMap": true,
+      "baseUrl": ".",
+      "removeComments": true,
+      "typeRoots": ["node_modules/@types"],
+      "paths": {
+         "*": [
+            "node_modules/@types/*",
+            "./server/types/*"
+         ]
+      }
+   }
+}

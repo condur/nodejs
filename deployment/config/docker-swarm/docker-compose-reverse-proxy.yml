@@ -1,0 +1,63 @@
+version: "3.7"
+services:
+
+  traefik:
+    image: traefik:1.6
+    depends_on:
+      - log_collector
+    ports:
+      - target: 80
+        protocol: tcp
+        published: ${HOST_HTTP_PORT}
+        mode: ingress
+      - target: 443
+        protocol: tcp
+        published: ${HOST_HTTPS_PORT}
+        mode: ingress
+      - target: 8080
+        protocol: tcp
+        published: ${HOST_HEALTH_CHECK_PORT}
+        mode: ingress
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - reverse_proxy
+    logging:
+      driver: "fluentd"
+      options:
+        tag: reverse_proxy
+    configs:
+      - source: traefik_toml
+        target: /etc/traefik/traefik.toml
+        mode: 0444
+    secrets:
+      - source: nodejs_crt
+        target: nodejs.crt
+      - source: nodejs_key
+        target: nodejs.key
+      - source: nodejs_root_crt
+        target: nodejs.root.crt
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      placement:
+        constraints: [node.role == manager]
+
+networks:
+  reverse_proxy:
+    external: true
+    driver: overlay
+
+configs:
+  traefik_toml:
+    external: true
+
+secrets:
+  nodejs_crt:
+    external: true
+  nodejs_key:
+    external: true
+  nodejs_root_crt:
+    external: true

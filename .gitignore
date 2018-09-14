@@ -1,0 +1,9 @@
+/typescript/node_modules/
+/typescript/bin/
+/typescript/coverage/
+
+/logs/*
+!/logs/.gitkeep
+
+/deployment/config/reverse-proxy/certificates/*
+!/deployment/config/reverse-proxy/certificates/.gitkeep

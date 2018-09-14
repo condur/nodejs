@@ -1,0 +1,87 @@
+version: "3.7"
+services:
+
+  database:
+    image: nodejs/database:${DATABASE_DOCKER_IMAGE_TAG}
+    depends_on:
+      - log_collector
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: nodejs
+      SCMS_DB_PASSWORD: ${NODEJS_DB_PASSWORD}
+    volumes:
+      - type: volume
+        source: postgresdata
+        target: /var/lib/postgresql/data
+    networks:
+      - nodejs
+    logging:
+      driver: "fluentd"
+      options:
+        tag: database
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 5s
+        order: start-first
+        failure_action: rollback
+      resources:
+        limits:
+          memory: 400M
+        reservations:
+          memory: 100M
+
+  typescript:
+    image: nodejs/typescript:${TYPESCRIPT_DOCKER_IMAGE_TAG}
+    depends_on:
+      - log_collector
+      - database
+    environment:
+      HOST_NAME: ${HOST_NAME}
+      SERVICE_NAME: "NodeJS Typescript"
+      SESSION_SECRET: ${SESSION_SECRET}
+      NODEJS_DB_HOST: nodejs_database
+      NODEJS_DB_PORT: 5432
+      NODEJS_DB_NAME: nodejs
+      NODEJS_DB_USER: nodejs_app
+      NODEJS_DB_PASSWORD: ${NODEJS_DB_PASSWORD}
+    networks:
+      - reverse_proxy
+      - nodejs
+    logging:
+      driver: "fluentd"
+      options:
+        tag: typescript
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 5s
+        order: start-first
+        failure_action: rollback
+      labels:
+        - "traefik.enable=true"
+        - "traefik.backend=typescript"
+        - "traefik.docker.network=reverse_proxy"
+        - "traefik.port=3000"
+        - "traefik.backend.loadbalancer.swarm=true"
+        - "traefik.frontend.entryPoints=http,https"
+        - "traefik.frontend.rule=Host:${HOST_NAME}; PathPrefix:/typescript; PathPrefixStrip:/typescript"
+
+volumes:
+  postgresdata:
+
+networks:
+  nodejs:
+    external: true
+    name: nodejs
+  reverse_proxy:
+    external: true
+    name: reverse_proxy
